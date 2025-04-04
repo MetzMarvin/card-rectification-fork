@@ -13,6 +13,8 @@ import imutils
 import time
 import numpy as np
 from os.path import join as pjoin
+
+from numpy.f2py.auxfuncs import throw_error
 from skimage import exposure, img_as_ubyte
 from imutils.perspective import four_point_transform
 from itertools import combinations
@@ -379,21 +381,26 @@ def inference(input_path, output_path, trained_model, device):
     img = cv2.resize(image, (PROCESS_SIZE, int(PROCESS_SIZE * image.shape[0] / image.shape[1])))
     ratio = image.shape[1] / PROCESS_SIZE
 
+    import traceback
 
     try:
-        if debug:
-            print("Edge Detection: try method1...")
+        print("Edge Detection: try method1...")
         edged = detect_edge_cnn(image, trained_model, device)
         corners = get_cnt(edged, img, ratio)
+    except Exception as e:
+        print("Edge Detection: try method1 failed with error:")
+        print(f"Error: {e}")
+        print(traceback.format_exc())  # This prints the full traceback
 
-    except:
+        print("\nTrying method2...")
         try:
-            if debug:
-                print("Edge Detection: try method2...")
             edged = detect_edge(img)
             corners = get_cnt(edged, img, ratio)
-        except:
-            print("Failed. {} could not be rectified :(".format(os.path.basename(input_path)))
+        except Exception as e2:
+            print("Edge Detection: method2 failed with error:")
+            print(f"Error: {e2}")
+            print(traceback.format_exc())
+            print(f"Failed. {os.path.basename(input_path)} could not be rectified :(")
             sys.exit()
 
     try:

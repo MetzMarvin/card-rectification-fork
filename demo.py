@@ -1,5 +1,11 @@
+import cv2
+import numpy as np
+from PIL import ImageEnhance
+
 from load_model import load_model
 from rectify import inference
+from pdf2image import convert_from_path
+
 
 """
 1. load_model()
@@ -49,13 +55,23 @@ if __name__ == "__main__":
     """
     Demo
     """
-    input1 = 'example/card1.jpg'
-    input2 = 'example/card2.jpg'
-    output1 = 'result/card1.png'
-    output2 = 'result/card2.png'
+    image = convert_from_path('example/perso_mm.pdf')[0]
+    # Rotate image (choose angle as needed: 90, 180, 270)
+    rotated_image = image.rotate(90, expand=True)
+
+    # Increase contrast (factor > 1 increases contrast, 1.5-2.0 is a good starting point)
+    enhancer = ImageEnhance.Contrast(rotated_image)
+    enhanced_image = enhancer.enhance(1.9)  # Adjust factor as needed
+
+    # Convert to numpy array for OpenCV
+    page_np = np.array(enhanced_image)
+    # Save the image temporarily (the rectifier requires file paths)
+    temp_input_path = "example/perso_mm.jpg"
+    cv2.imwrite(temp_input_path, page_np)
+    input1 = 'example/perso_mm.jpg'
+    output1 = 'result/perso_mm.png'
 
     trained_model, device = load_model()
     inference(input1, output1, trained_model, device)
-    inference(input2, output2, trained_model, device)
 
     print("Done.")
